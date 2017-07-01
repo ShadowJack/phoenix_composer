@@ -10,13 +10,12 @@ defmodule Mix.Tasks.Phx.Compose do
   @shortdoc "Composes a new Phoenix application with PhoenixComposer v#{@version}"
 
   def run([version]) when version in ~w(-v --version) do
-    Mix.Shell.IO.info("PhoenixComposer v#{@version}")
+    Mix.shell.info("PhoenixComposer v#{@version}")
   end
 
-  def run(_argv) do
-    phx_version = get_phx_version!()
+  def run(argv) do
+    get_phx_version() |> run(argv)
   end
-
 
   @not_installed_error """
   Phoenix framework is not installed or can't be found
@@ -25,18 +24,23 @@ defmodule Mix.Tasks.Phx.Compose do
 
   @doc false
   # Check if Phoenix archive is installed
-  # and remember its version
-  defp get_phx_version!() do
-    Mix.Shell.Process.cmd("mix phx.new -v", print_app: false)
+  # and return its version
+  def get_phx_version(cmd \\ "phx.new") do
+    Mix.Shell.Process.cmd("mix #{cmd} -v", print_app: false)
     receive do {:mix_shell, :run, [response]} -> 
       cond do
         response =~ "could not be found" -> 
-          Mix.Shell.IO.error(@not_installed_error)
-          throw "Phoenix is not found"
+          Mix.shell.error(@not_installed_error)
+          :not_installed
         :otherwise -> 
           Regex.run(~r/Phoenix v(\d+\.\d+).*/, response) |> List.last()
       end
     end
+  end
+
+  defp run(:not_installed, _argv), do: nil
+  defp run(phx_version, argv) do
+    #TODO: parse args and put some of them into phx.new command
   end
 
 end
