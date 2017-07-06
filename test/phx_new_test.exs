@@ -18,10 +18,6 @@ defmodule PhxNewTest do
     assert_received {:mix_shell, :error, ["Phoenix framework is not installed" <> _]}
   end
 
-  test "checks if path to a new project is present" do
-    assert capture_io(fn -> Compose.run([]) end) =~ "mix phx.compose PATH"
-  end
-
   test "doesn't ask for --umbrella option for Phoenix ~> 1.2.0" do
     in_tmp("test_umbrella_version", fn -> 
       answer_questions()
@@ -46,26 +42,6 @@ defmodule PhxNewTest do
 
       flush()
     end)
-  end
-
-  test "selects prompt for string defaults" do
-    option = {:test_option, "Prompt", "default"}
-    send self(), {:mix_shell_input, :prompt, ""}
-
-    response = Compose.ask_user(option)
-
-    assert_receive {:mix_shell, :prompt, ["Prompt"]}
-    assert {:test_option, "default"} == response
-  end
-
-  test "selects yes? for bool defaults" do
-    option = {:test_option, "Yes?", true}
-    send self(), {:mix_shell_input, :yes?, false}
-
-    response = Compose.ask_user(option)
-
-    assert_receive {:mix_shell, :yes?, ["Yes?"]}
-    assert {:test_option, false} == response
   end
 
   test "runs correct mix task depending on version of Phoenix" do
