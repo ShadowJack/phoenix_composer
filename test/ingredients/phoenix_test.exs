@@ -1,21 +1,26 @@
-Code.require_file "mix_helper.exs", __DIR__
+Code.require_file "../mix_helper.exs", __DIR__
 
 Mix.shell(Mix.Shell.Process)
 
-defmodule PhxNewTest do
+defmodule Ingredients.PhoenixTest do
   use ExUnit.Case, async: true
 
   import MixHelper
   import ExUnit.CaptureIO
 
-  alias Mix.Tasks.Phx.Compose
+  alias PhoenixComposer.Ingredients.Phoenix
+
 
   @test_app "test"
 
-  test "error is returned if phoenix is not installed" do
-    Compose.get_phx_version("phx.fail")
 
-    assert_received {:mix_shell, :error, ["Phoenix framework is not installed" <> _]}
+  test "checks if path to a new project is present" do
+    assert capture_io(fn -> Phoenix.run([], []) end) =~ "mix phx.compose PATH"
+  end
+
+
+  test "error is returned if phoenix is not installed" do
+    assert :not_installed == Phoenix.get_phx_version("phx.fail")
   end
 
   test "doesn't ask for --umbrella option for Phoenix ~> 1.2.0" do
@@ -23,7 +28,7 @@ defmodule PhxNewTest do
       answer_questions()
       version = 1.2
 
-      Compose.generate_new_project(@test_app, version, []) 
+      Phoenix.generate_new_project(version, @test_app, []) 
 
       refute_receive {:mix_shell, :prompt, ["Do you want to generate an umbrella project" <> _]}
 
@@ -36,7 +41,7 @@ defmodule PhxNewTest do
       answer_questions()
       version = 1.3
 
-      Compose.generate_new_project(@test_app, version, []) 
+      Phoenix.generate_new_project(version, @test_app, []) 
 
       assert_receive {:mix_shell, :yes?, ["Do you want to generate an umbrella project" <> _]}
 
@@ -53,3 +58,4 @@ defmodule PhxNewTest do
       1..5 |> Enum.each(fn(_x) -> send self(), {:mix_shell_input, :yes?, true} end)
   end
 end
+
