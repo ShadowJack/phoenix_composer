@@ -4,10 +4,7 @@ defmodule PhoenixComposer.Ingredients.Phoenix do
   depending on version of Phoenix installed
   """
 
-  #TODO: move to __using__
-  @behaviour PhoenixComposer.Ingredients.Ingredient
-  alias PhoenixComposer.Option
-  import PhoenixComposer.Ingredients.Ingredient
+  use PhoenixComposer.Ingredients.Ingredient
 
   @phx_new "phx.new"
   @phoenix_new "phoenix.new"
@@ -23,8 +20,22 @@ defmodule PhoenixComposer.Ingredients.Phoenix do
   @spec run([String.t], [{atom, any}]) :: none
   def run([], _), do: Mix.Tasks.Help.run(["phx.compose"])
   def run([path | _], opts) do
-    get_phx_version() 
-    |> generate_new_project(path, opts)
+    case get_phx_version() do
+      :not_installed -> Mix.shell.error(@not_installed_error)
+      phx_version    -> generate_new_project(path, phx_version, opts)
+    end
+  end
+
+
+  @doc """
+  Generate a new phoenix project.
+  """
+  @spec generate_new_project(String.t, float, []) :: any
+  def generate_new_project(path, phx_version, _opts) do
+    results = 
+      get_ingredient_opts([path, phx_version])
+      |> Enum.reduce([], &(ask_user/2))
+    #TODO: Call phx.new
   end
 
 
@@ -50,20 +61,6 @@ defmodule PhoenixComposer.Ingredients.Phoenix do
           |> String.to_float()
       end
     end
-  end
-
-
-  @doc """
-  Generate a new phoenix project.
-  """
-  @spec generate_new_project(:not_installed | float, String.t, []) :: any
-  def generate_new_project(:not_installed, _, _), do: Mix.shell.error(@not_installed_error)
-  def generate_new_project(phx_version, path, _opts) do
-    results = 
-      get_ingredient_opts([path, phx_version])
-      |> Enum.reduce([], &(ask_user/2))
-    
-    #TODO: Call phx.new
   end
 
 

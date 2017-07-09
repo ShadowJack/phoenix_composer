@@ -7,11 +7,25 @@ defmodule PhoenixComposer.Ingredients.Ingredient do
   
 
   @callback run(args :: [String.t], opts :: [{atom, any}]) :: none
-  @callback get_ingredient_opts([]) :: [Option.t]
+  @callback get_ingredient_opts(args :: []) :: [Option.t]
 
 
   @typep answer :: String.t | boolean
 
+
+  defmacro __using__(_) do
+    quote do
+      @behaviour unquote(__MODULE__)
+
+      alias PhoenixComposer.Option
+
+      import unquote(__MODULE__)
+
+      def get_ingredient_opts(_args), do: []
+
+      defoverridable get_ingredient_opts: 1
+    end
+  end
 
   @doc """
   Asks user a new question depending on 

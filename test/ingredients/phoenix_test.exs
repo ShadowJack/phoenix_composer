@@ -28,7 +28,7 @@ defmodule Ingredients.PhoenixTest do
       answer_questions()
       version = 1.2
 
-      Phoenix.generate_new_project(version, @test_app, []) 
+      Phoenix.generate_new_project(@test_app, version, []) 
 
       refute_receive {:mix_shell, :prompt, ["Do you want to generate an umbrella project" <> _]}
 
@@ -41,7 +41,7 @@ defmodule Ingredients.PhoenixTest do
       answer_questions()
       version = 1.3
 
-      Phoenix.generate_new_project(version, @test_app, []) 
+      Phoenix.generate_new_project(@test_app, version, []) 
 
       assert_receive {:mix_shell, :yes?, ["Do you want to generate an umbrella project" <> _]}
 
