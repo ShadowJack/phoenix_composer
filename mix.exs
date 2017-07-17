@@ -11,10 +11,12 @@ defmodule PhoenixComposer.Mixfile do
   end
 
   def application do
-    [extra_applications: []]
+    [extra_applications: [:porcelain]]
   end
 
   defp deps do
-    []
+    [
+      {:porcelain, "~> 2.0"}
+    ]
   end
 end

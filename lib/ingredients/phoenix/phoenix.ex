@@ -5,6 +5,9 @@ defmodule PhoenixComposer.Ingredients.Phoenix do
   """
 
   use PhoenixComposer.Ingredients.Ingredient
+  alias Porcelain.Process
+  alias Porcelain.Result
+
 
   @phx_new "phx.new"
   @phoenix_new "phoenix.new"
@@ -19,10 +22,13 @@ defmodule PhoenixComposer.Ingredients.Phoenix do
   """
   @spec run([String.t], [{atom, any}]) :: none
   def run([], _), do: Mix.Tasks.Help.run(["phx.compose"])
-  def run([path | _], opts) do
+  def run([path | _], _opts) do
+    Application.ensure_all_started(:phoenix_composer)
     case get_phx_version() do
       :not_installed -> Mix.shell.error(@not_installed_error)
-      phx_version    -> generate_new_project(path, phx_version, opts)
+      phx_version    -> 
+        get_ingredient_opts([path, phx_version])
+        |> exec_cmds([path, phx_version])
     end
   end
 
@@ -30,12 +36,28 @@ defmodule PhoenixComposer.Ingredients.Phoenix do
   @doc """
   Generate a new phoenix project.
   """
-  @spec generate_new_project(String.t, float, []) :: any
-  def generate_new_project(path, phx_version, _opts) do
-    results = 
-      get_ingredient_opts([path, phx_version])
+  @spec exec_cmds([Option.t], []) :: none
+  def exec_cmds(options, [path, phx_version | _]) do
+    argv = 
+      options
       |> Enum.reduce([], &(ask_user/2))
-    #TODO: Call phx.new
+      |> OptionParser.to_argv()
+      |> Enum.join(" ")
+
+    cmd = cond do
+      phx_version >= 1.3 -> "mix #{@phx_new} #{path} #{argv}"
+      :otherwise         -> "mix #{@phoenix_new} #{path} #{argv}"
+    end
+
+    proc = %Process{pid: pid} = 
+      Porcelain.spawn_shell(cmd, in: :receive, out: {:send, self()})
+
+    # Don't agree to install deps yet
+    Process.send_input(proc, "n\n")
+    receive do
+      {^pid, :result, %Result{status: 0}} -> :ok
+      {^pid, :result, %Result{status: status}} -> IO.puts("Error running task \"#{cmd}\". Status code: #{status}")
+    end
   end
 
 
@@ -74,11 +96,11 @@ defmodule PhoenixComposer.Ingredients.Phoenix do
     opts = [
       %Option{name: :app,       default: default_app,      description: "Enter the name of the OTP application.\nThe default is: \"#{default_app}\"\n"},
       %Option{name: :module,    default: default_module,   description: "Enter the name of the base module.\nThe default is: \"#{default_module}\"\n"},
-      %Option{name: :no_ecto,   default: false,            description: "Do NOT use ecto in your project?"},
-      %Option{name: :database,  default: "postgres",       description: "Specify the database adapter for ecto. Values can be `postgres`, `mysql`.\nThe default is: `postgres`\n", deps: [no_ecto: false]},
-      %Option{name: :binary_id, default: false,            description: "Use `binary_id` as primary key type in Ecto schemas?", deps: [no_ecto: false]},
-      %Option{name: :no_brunch, default: false,            description: "Do NOT use brunch in yout project?"},
-      %Option{name: :no_html,   default: false,            description: "Do NOT generate html views?"}
+      %Option{name: :ecto,      default: true,             description: "Add ecto in your project?"},
+      %Option{name: :database,  default: "postgres",       description: "Specify the database adapter for ecto. Values can be `postgres`, `mysql`.\nThe default is: `postgres`\n", deps: [ecto: true]},
+      %Option{name: :binary_id, default: false,            description: "Use `binary_id` as primary key type in Ecto schemas?", deps: [ecto: true]},
+      %Option{name: :brunch,    default: true,             description: "Add brunch in yout project?"},
+      %Option{name: :html,      default: true,             description: "Generate html views?"}
     ]
 
     if phx_version < 1.3 do

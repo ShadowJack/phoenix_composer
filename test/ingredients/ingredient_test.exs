@@ -10,7 +10,7 @@ defmodule Ingredients.IngredientTest do
 
 
   test "selects prompt for options with string defaults" do
-    send self(), {:mix_shell_input, :prompt, ""}
+    send self(), {:mix_shell_input, :prompt, "\n"}
 
     responses = Ingredient.ask_user(@string_opt, [])
 

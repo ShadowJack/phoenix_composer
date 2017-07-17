@@ -9,6 +9,7 @@ defmodule Ingredients.PhoenixTest do
   import ExUnit.CaptureIO
 
   alias PhoenixComposer.Ingredients.Phoenix
+  alias PhoenixComposer.Option
 
 
   @test_app "test"
@@ -24,38 +25,59 @@ defmodule Ingredients.PhoenixTest do
   end
 
   test "doesn't ask for --umbrella option for Phoenix ~> 1.2.0" do
-    in_tmp("test_umbrella_version", fn -> 
-      answer_questions()
-      version = 1.2
+    version = 1.2
 
-      Phoenix.generate_new_project(@test_app, version, []) 
+    opts = Phoenix.get_ingredient_opts([@test_app, version]) 
 
-      refute_receive {:mix_shell, :prompt, ["Do you want to generate an umbrella project" <> _]}
-
-      flush()
-    end)
+    refute Enum.any?(opts, fn %Option{name: name} -> name == :umbrella end)
   end
 
   test "asks for --umbrella option for Phoenix ~> 1.3.0" do
-    in_tmp("test_umbrella_version", fn -> 
+    version = 1.3
+
+    opts = Phoenix.get_ingredient_opts([@test_app, version]) 
+
+    assert Enum.any?(opts, fn %Option{name: name} -> name == :umbrella end)
+  end
+
+  test "runs mix task that generates Phoenix project" do
+    in_tmp(get_tmp_folder(), fn -> 
       answer_questions()
-      version = 1.3
+      
+      Phoenix.run([@test_app], [])
 
-      Phoenix.generate_new_project(@test_app, version, []) 
-
-      assert_receive {:mix_shell, :yes?, ["Do you want to generate an umbrella project" <> _]}
-
-      flush()
+      assert_file("#{@test_app}/mix.exs", "phoenix")
     end)
   end
 
-  test "runs correct mix task depending on version of Phoenix" do
-    
+  test "mix phx.new or phoenix.new task respects answers of the user" do
+    in_tmp(get_tmp_folder(), fn -> 
+      answer_questions(false)
+
+      Phoenix.run([@test_app], [])
+
+      # No files for ecto
+      assert_file("#{@test_app}/mix.exs")
+      refute_file("#{@test_app}/lib/#{@test_app}/repo.ex")
+    end)
   end
 
-  defp answer_questions() do
-      1..3 |> Enum.each(fn(_x) -> send self(), {:mix_shell_input, :prompt, ""} end)
-      1..5 |> Enum.each(fn(_x) -> send self(), {:mix_shell_input, :yes?, true} end)
+  defp answer_questions(with_ecto \\ true) do
+    send self(), {:mix_shell_input, :yes?, false}
+    send self(), {:mix_shell_input, :prompt, "\n"}
+    send self(), {:mix_shell_input, :prompt, "\n"}
+    send self(), {:mix_shell_input, :yes?, with_ecto}
+    send self(), {:mix_shell_input, :prompt, "\n"}
+    send self(), {:mix_shell_input, :yes?, false}
+    send self(), {:mix_shell_input, :yes?, true}
+    send self(), {:mix_shell_input, :yes?, true}
+    #send self(), {:mix_shell_input, :yes?, false}
+    # 1..3 |> Enum.each(fn(_x) -> send self(), {:mix_shell_input, :prompt, ""} end)
+    # 1..6 |> Enum.each(fn(_x) -> send self(), {:mix_shell_input, :yes?, false} end)
+  end
+
+  defp get_tmp_folder() do
+    "test_folder_#{:rand.uniform(1000)}"
   end
 end
 

@@ -8,7 +8,7 @@ defmodule PhoenixComposer.Ingredients.Ingredient do
 
   @callback run(args :: [String.t], opts :: [{atom, any}]) :: none
   @callback get_ingredient_opts(args :: []) :: [Option.t]
-
+  @callback exec_cmds(opts :: [Option.t], args :: []) :: none
 
   @typep answer :: String.t | boolean
 
@@ -56,7 +56,8 @@ defmodule PhoenixComposer.Ingredients.Ingredient do
 
   @spec do_ask_user(%Option{default: String.t}, [{atom, answer}]) :: [{atom, answer}]
   defp do_ask_user(%Option{default: default} = option, answers) when is_binary(default) do
-    case Mix.shell.prompt(option.description) do
+    response = Mix.shell.prompt(option.description) |> String.trim()
+    case response do
       ""       -> [{option.name, default} | answers]
       value -> [{option.name, value} | answers]
     end
