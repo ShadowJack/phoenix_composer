@@ -6,7 +6,6 @@ defmodule Ingredients.PhoenixTest do
   use ExUnit.Case, async: true
 
   import MixHelper
-  import ExUnit.CaptureIO
 
   alias PhoenixComposer.Ingredients.Phoenix
   alias PhoenixComposer.Option
@@ -16,7 +15,7 @@ defmodule Ingredients.PhoenixTest do
 
 
   test "checks if path to a new project is present" do
-    assert capture_io(fn -> Phoenix.run([], []) end) =~ "mix phx.compose PATH"
+    assert_raise RuntimeError, ~r/.*path.*/, fn -> Phoenix.get_description([], []) end
   end
 
 
@@ -27,7 +26,7 @@ defmodule Ingredients.PhoenixTest do
   test "doesn't ask for --umbrella option for Phoenix ~> 1.2.0" do
     version = 1.2
 
-    opts = Phoenix.get_ingredient_opts([@test_app, version]) 
+    opts = Phoenix.get_default_opts([@test_app, version]) 
 
     refute Enum.any?(opts, fn %Option{name: name} -> name == :umbrella end)
   end
@@ -35,7 +34,7 @@ defmodule Ingredients.PhoenixTest do
   test "asks for --umbrella option for Phoenix ~> 1.3.0" do
     version = 1.3
 
-    opts = Phoenix.get_ingredient_opts([@test_app, version]) 
+    opts = Phoenix.get_default_opts([@test_app, version]) 
 
     assert Enum.any?(opts, fn %Option{name: name} -> name == :umbrella end)
   end
@@ -43,8 +42,9 @@ defmodule Ingredients.PhoenixTest do
   test "runs mix task that generates Phoenix project" do
     in_tmp(get_tmp_folder(), fn -> 
       answer_questions()
-      
-      Phoenix.run([@test_app], [])
+
+      Phoenix.get_description([@test_app], [])
+      |> Phoenix.exec_cmds()
 
       assert_file("#{@test_app}/mix.exs", "phoenix")
     end)
@@ -54,7 +54,8 @@ defmodule Ingredients.PhoenixTest do
     in_tmp(get_tmp_folder(), fn -> 
       answer_questions(false)
 
-      Phoenix.run([@test_app], [])
+      Phoenix.get_description([@test_app], [])
+      |> Phoenix.exec_cmds()
 
       # No files for ecto
       assert_file("#{@test_app}/mix.exs")

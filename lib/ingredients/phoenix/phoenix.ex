@@ -5,6 +5,7 @@ defmodule PhoenixComposer.Ingredients.Phoenix do
   """
 
   use PhoenixComposer.Ingredients.Ingredient
+
   alias Porcelain.Process
   alias Porcelain.Result
 
@@ -16,37 +17,37 @@ defmodule PhoenixComposer.Ingredients.Phoenix do
   To install please visit http://www.phoenixframework.org/docs/installation
   """
 
-
-  @doc """
-  Implementation for the main function of Ingredient
-  """
-  @spec run([String.t], [{atom, any}]) :: none
-  def run([], _), do: Mix.Tasks.Help.run(["phx.compose"])
-  def run([path | _], _opts) do
+  @doc false
+  @impl true
+  @spec get_description([String.t], [{atom, any}]) :: Ingredient.t
+  def get_description([], _) do
+    raise "Project path is missing"
+  end
+  def get_description([path | _], _opts) do
     Application.ensure_all_started(:phoenix_composer)
     case get_phx_version() do
-      :not_installed -> Mix.shell.error(@not_installed_error)
+      :not_installed -> %Ingredient{errors: [@not_installed_error]}
       phx_version    -> 
-        get_ingredient_opts([path, phx_version])
-        |> exec_cmds([path, phx_version])
+        opts = 
+          get_default_opts([path, phx_version])
+          |> Enum.reduce([], &(ask_user/2))
+        %Ingredient{opts: opts, args: [path]}
     end
   end
 
 
-  @doc """
-  Generate a new phoenix project.
-  """
-  @spec exec_cmds([Option.t], []) :: none
-  def exec_cmds(options, [path, phx_version | _]) do
+  @doc false
+  @impl true
+  @spec exec_cmds(Ingredient.t) :: none
+  def exec_cmds(%Ingredient{opts: opts, args: [path | _]}) do
     argv = 
-      options
-      |> Enum.reduce([], &(ask_user/2))
+      opts
       |> OptionParser.to_argv()
       |> Enum.join(" ")
 
     cmd = cond do
-      phx_version >= 1.3 -> "mix #{@phx_new} #{path} #{argv}"
-      :otherwise         -> "mix #{@phoenix_new} #{path} #{argv}"
+      get_phx_version() >= 1.3 -> "mix #{@phx_new} #{path} #{argv}"
+      :otherwise               -> "mix #{@phoenix_new} #{path} #{argv}"
     end
 
     proc = %Process{pid: pid} = 
@@ -59,6 +60,7 @@ defmodule PhoenixComposer.Ingredients.Phoenix do
       {^pid, :result, %Result{status: status}} -> IO.puts("Error running task \"#{cmd}\". Status code: #{status}")
     end
   end
+
 
 
   @doc """
@@ -89,8 +91,8 @@ defmodule PhoenixComposer.Ingredients.Phoenix do
   @doc """
   Build options for phoenix.new or phx.new(if installed) task.
   """
-  @spec get_ingredient_opts([]) :: [Option.t]
-  def get_ingredient_opts([path, phx_version]) do
+  @spec get_default_opts([]) :: [Option.t]
+  def get_default_opts([path, phx_version]) do
     default_app = Path.basename(path)
     default_module = Macro.camelize(default_app)
     opts = [
@@ -111,6 +113,5 @@ defmodule PhoenixComposer.Ingredients.Phoenix do
       [umbrella | opts]
     end
   end
-
 
 end

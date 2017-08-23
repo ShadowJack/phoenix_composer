@@ -4,13 +4,25 @@ defmodule PhoenixComposer.Ingredients.Ingredient do
   """
 
   alias PhoenixComposer.Option
-  
 
-  @callback run(args :: [String.t], opts :: [{atom, any}]) :: none
-  @callback get_ingredient_opts(args :: []) :: [Option.t]
-  @callback exec_cmds(opts :: [Option.t], args :: []) :: none
+  # Struct with results of an ingredient
+  defstruct errors: [], opts: [], args: [], influences: []
 
-  @typep answer :: String.t | boolean
+  @type answer :: String.t | boolean
+  @type t :: %__MODULE__{errors: [], opts: [{atom, any}], args: [], influences: [{atom, answer}]}
+
+  @doc """
+  Returns a description of the recipe:
+  a list of options chosen by user,
+  errors occured, args for the commands passed from the outside
+  influences that are influencing something??? :)
+  """
+  @callback get_description(args :: [String.t], opts :: [{atom, any}]) :: __MODULE__.t
+
+  @doc """
+  Executes shell commands with options and arguments passed
+  """
+  @callback exec_cmds(__MODULE__.t) :: none
 
 
   defmacro __using__(_) do
@@ -20,10 +32,7 @@ defmodule PhoenixComposer.Ingredients.Ingredient do
       alias PhoenixComposer.Option
 
       import unquote(__MODULE__)
-
-      def get_ingredient_opts(_args), do: []
-
-      defoverridable get_ingredient_opts: 1
+      alias unquote(__MODULE__)
     end
   end
 
