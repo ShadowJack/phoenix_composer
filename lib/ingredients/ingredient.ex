@@ -1,6 +1,16 @@
 defmodule PhoenixComposer.Ingredients.Ingredient do
   @moduledoc """
-  Module that defines a behaviour for an ingredient
+  Module that defines a behaviour for an ingredient.
+
+  Ingredient describes one entity that can be installed automatically.
+
+  For example:
+  * Template language - phoenix_html, phoenix_slime, phoenix_haml
+  * CSS-preprocessor - SASS, SCSS, LESS, PostCSS
+  * DAL-stuff - ecto(with DB adapters), eredis, amnesia
+  * Authentication - guardian, coherence, oauth2, doorman
+  * Authorization - canary, openmaize, canada
+  ...
   """
 
   alias PhoenixComposer.Option
@@ -9,21 +19,42 @@ defmodule PhoenixComposer.Ingredients.Ingredient do
   defstruct errors: [], opts: [], args: [], influences: []
 
   @type answer :: String.t | boolean
-  @type t :: %__MODULE__{errors: [], opts: [{atom, any}], args: [], influences: [{atom, answer}]}
+  @type t :: %__MODULE__{errors: [], opts: Keyword.t, args: [], influences: [{atom, answer}]}
 
   @doc """
-  Returns a description of the recipe:
+  Should return a description of the recipe:
   a list of options chosen by user,
   errors occured, args for the commands passed from the outside
   influences that are influencing something??? :)
   """
-  @callback get_description(args :: [String.t], opts :: [{atom, any}]) :: __MODULE__.t
+  @callback get_description(args :: [String.t], opts :: Keyword.t) :: __MODULE__.t
 
   @doc """
-  Executes shell commands with options and arguments passed
+  Execute all required shell commands with options and arguments 
+  passed from `get_description` and from other ingredients in the same recipe
   """
-  @callback exec_cmds(__MODULE__.t) :: none
+  @callback cmds(description :: __MODULE__.t) :: none
 
+  @doc """
+  Add a new dependency to mix.exs file
+  """
+  @callback deps(version :: String.t) :: none
+
+  @doc """
+  Add a new entry to config file
+  """
+  @callback config() :: none
+
+  @doc """
+  Adds new files from templates specified in the module implementing Ingredient
+  passing `opts` to the eex templates
+  """
+  @callback add_files(opts :: Keyword.t) :: none
+
+  @doc """
+  Print some messages to the console
+  """
+  @callback todo() :: none
 
   defmacro __using__(_) do
     quote do
@@ -33,22 +64,44 @@ defmodule PhoenixComposer.Ingredients.Ingredient do
 
       import unquote(__MODULE__)
       alias unquote(__MODULE__)
+
+      def exec(args \\ [], opts \\ [], exec_children) when is_function(exec_children) do
+        description = get_description(args, opts)
+        # TODO: call function that is defined in ingredient that describes
+        # order of steps to be executed, ex.:
+        # todo
+        cmds(description)
+        Keyword.merge(opts, description.opts) |> exec_children.()
+        description
+      end
+
+      def cmds(_), do: :ok
+
+      def deps(_), do: :ok
+
+      def config(), do: :ok
+
+      def add_files(_), do: :ok
+
+      def todo(), do: :ok
+
+      defoverridable [cmds: 1, deps: 1, config: 0, add_files: 1, todo: 0]
     end
   end
 
   @doc """
-  Asks user a new question depending on 
+  Asks user a new question in console depending on 
   the default value of the answer.
   
   If default answer is string then question is prompted.
   If default answer is bool then [Yn] answer is expected.
   """
   @spec ask_user(Option.t, [{atom, answer}]) :: [{atom, answer}]
-  def ask_user(option, answers) do
-    if should_ask?(answers, option.deps) do
-      do_ask_user(option, answers)
+  def ask_user(option, prev_answers) do
+    if should_ask?(prev_answers, option.deps) do
+      do_ask_user(option, prev_answers)
     else
-      answers
+      prev_answers
     end
   end
 

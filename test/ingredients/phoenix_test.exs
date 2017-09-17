@@ -72,9 +72,6 @@ defmodule Ingredients.PhoenixTest do
     send self(), {:mix_shell_input, :yes?, false}
     send self(), {:mix_shell_input, :yes?, true}
     send self(), {:mix_shell_input, :yes?, true}
-    #send self(), {:mix_shell_input, :yes?, false}
-    # 1..3 |> Enum.each(fn(_x) -> send self(), {:mix_shell_input, :prompt, ""} end)
-    # 1..6 |> Enum.each(fn(_x) -> send self(), {:mix_shell_input, :yes?, false} end)
   end
 
   defp get_tmp_folder() do

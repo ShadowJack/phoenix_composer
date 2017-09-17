@@ -38,8 +38,8 @@ defmodule PhoenixComposer.Ingredients.Phoenix do
 
   @doc false
   @impl true
-  @spec exec_cmds(Ingredient.t) :: none
-  def exec_cmds(%Ingredient{opts: opts, args: [path | _]}) do
+  @spec cmds(Ingredient.t) :: none
+  def cmds(%Ingredient{opts: opts, args: [path | _]}) do
     argv = 
       opts
       |> OptionParser.to_argv()
@@ -60,7 +60,6 @@ defmodule PhoenixComposer.Ingredients.Phoenix do
       {^pid, :result, %Result{status: status}} -> IO.puts("Error running task \"#{cmd}\". Status code: #{status}")
     end
   end
-
 
 
   @doc """

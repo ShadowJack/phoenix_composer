@@ -24,6 +24,7 @@ defmodule Mix.Tasks.Phx.Compose do
       {_, [], _}  -> Mix.Tasks.Help.run(["phx.compose"])
       {opts, args, _} -> 
         #TODO: extract some info from opts
+        #TODO: run recipe
         PhoenixComposer.Ingredients.Phoenix.run(args, opts)
     end
   end
