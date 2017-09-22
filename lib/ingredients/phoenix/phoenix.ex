@@ -23,18 +23,22 @@ defmodule PhoenixComposer.Ingredients.Phoenix do
   def get_description([], _) do
     raise "Project path is missing"
   end
-  def get_description([path | _], _opts) do
+  def get_description([path | _], external_opts) do
     Application.ensure_all_started(:phoenix_composer)
-    case get_phx_version() do
-      :not_installed -> %Ingredient{errors: [@not_installed_error]}
-      phx_version    -> 
-        opts = 
-          get_default_opts([path, phx_version])
-          |> Enum.reduce([], &(ask_user/2))
-        %Ingredient{opts: opts, args: [path]}
-    end
+    get_phx_version() |> do_get_description(path, external_opts)
   end
 
+  defp do_get_description(:not_installed, _path, _external_opts) do
+    %Ingredient{errors: [@not_installed_error]}
+  end
+  defp do_get_description(phx_version ,path, _external_opts) do
+    opts = 
+      get_default_opts([path, phx_version])
+      |> Enum.reduce([], &(ask_user/2))
+      |> Keyword.put(:phx_version, phx_version)
+    #TODO: find out app path, module path
+    %Ingredient{opts: opts, args: [path]}
+  end
 
   @doc false
   @impl true
