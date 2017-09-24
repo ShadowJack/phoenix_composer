@@ -58,8 +58,6 @@ defmodule PhoenixComposer.Ingredients.TemplateManager do
 
   `target_path` is a path to the destination, where result should be put.
   This path is relative to `project_location`.
-
-  
   """
   defmacro template(name, mappings) do
     quote do

@@ -36,9 +36,19 @@ defmodule PhoenixComposer.Ingredients.Phoenix do
       get_default_opts([path, phx_version])
       |> Enum.reduce([], &(ask_user/2))
       |> Keyword.put(:phx_version, phx_version)
-    #TODO: find out app path, module path
+
+    # Get additional info about paths to important folders
+    # of the new project
+    mod = if Keyword.get(opts, :umbrella, false) do
+      PhoenixComposer.Ingredients.Phoenix.Umbrella 
+    else
+      PhoenixComposer.Ingredients.Phoenix.Single
+    end
+    opts = mod.add_bindings(phx_version, path, opts) |> IO.inspect()
+
     %Ingredient{opts: opts, args: [path]}
   end
+
 
   @doc false
   @impl true
@@ -50,8 +60,8 @@ defmodule PhoenixComposer.Ingredients.Phoenix do
       |> Enum.join(" ")
 
     cmd = cond do
-      get_phx_version() >= 1.3 -> "mix #{@phx_new} #{path} #{argv}"
-      :otherwise               -> "mix #{@phoenix_new} #{path} #{argv}"
+      opts.phx_version >= 1.3 -> "mix #{@phx_new} #{path} #{argv}"
+      :otherwise              -> "mix #{@phoenix_new} #{path} #{argv}"
     end
 
     proc = %Process{pid: pid} = 

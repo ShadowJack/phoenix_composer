@@ -56,6 +56,25 @@ defmodule PhoenixComposer.Ingredients.Ingredient do
   """
   @callback todo() :: none
 
+  @doc ~S"""
+  Funciton that calls all required callbacks in the right order
+  
+  ## Example
+
+    iex> defmodule SomeIngredient do
+    ...>   use PhoenixComposer.Ingredients.Ingredient
+    ...>
+    ...>   def exec(%Ingredient{opts: opts}) do 
+    ...>     deps Keyword.get(opts, :deps_version, "~> 0.2")
+    ...>     config
+    ...>     cmds
+    ...>     todo
+    ...>   end
+    ...> end
+
+  """
+  @callback exec(description __MODULE__.t) :: none
+
   defmacro __using__(_) do
     quote do
       @behaviour unquote(__MODULE__)
@@ -65,12 +84,11 @@ defmodule PhoenixComposer.Ingredients.Ingredient do
       import unquote(__MODULE__)
       alias unquote(__MODULE__)
 
-      def exec(args \\ [], opts \\ [], exec_children) when is_function(exec_children) do
+      def exec_ingredient(args \\ [], opts \\ [], exec_children) when is_function(exec_children) do
         description = get_description(args, opts)
-        # TODO: call function that is defined in ingredient that describes
-        # order of steps to be executed, ex.:
-        # todo
-        cmds(description)
+
+        exec(description)
+
         Keyword.merge(opts, description.opts) |> exec_children.()
         description
       end
