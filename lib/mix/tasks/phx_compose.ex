@@ -10,7 +10,6 @@ defmodule Mix.Tasks.Phx.Compose do
 
   """
   use Mix.Task
-  alias PhoenixComposer.Option
 
   @version Mix.Project.config[:version]
   @shortdoc "Composes a new Phoenix application with PhoenixComposer v#{@version}"
@@ -23,9 +22,7 @@ defmodule Mix.Tasks.Phx.Compose do
     case OptionParser.parse(argv) do
       {_, [], _}  -> Mix.Tasks.Help.run(["phx.compose"])
       {opts, args, _} -> 
-        #TODO: extract some info from opts
-        #TODO: run recipe
-        PhoenixComposer.Ingredients.Phoenix.run(args, opts)
+        PhoenixComposer.Recipes.PostgresHamlSassGuardianExmachinaRecipe.exec(args, opts)
     end
   end
 

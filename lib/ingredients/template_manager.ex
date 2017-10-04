@@ -48,7 +48,7 @@ defmodule PhoenixComposer.Ingredients.TemplateManager do
   * `:eex` - create a new file and fill with data from template while interpolating bindings
 
   `source` is a relative path to the template file/folder inside 
-  `/ingredients/#{ingredient_name}/templates/` folder.
+  `/ingredients/{ingredient_name}/templates/` folder.
 
   `project_location` describes where the output should be placed
   * `:project` - template target is relative to project folder
@@ -69,7 +69,7 @@ defmodule PhoenixComposer.Ingredients.TemplateManager do
   Copy data from template with `name` located in module `mod`
   to the destination while interpolating `bindings`
   """
-  def copy_from(project_path, bindings, mod, name) when is_atom(name) do
+  def copy_from(bindings, mod, name) when is_atom(name) do
     mapping = mod.template_files(name)
     for {format, source, project_location, target_path} <- mapping do
       target = join_path(bindings, project_location, target_path)

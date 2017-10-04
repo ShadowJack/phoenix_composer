@@ -73,7 +73,7 @@ defmodule PhoenixComposer.Ingredients.Ingredient do
     ...> end
 
   """
-  @callback exec(description __MODULE__.t) :: none
+  @callback exec(description :: __MODULE__.t) :: none
 
   defmacro __using__(_) do
     quote do
@@ -84,13 +84,16 @@ defmodule PhoenixComposer.Ingredients.Ingredient do
       import unquote(__MODULE__)
       alias unquote(__MODULE__)
 
-      def exec_ingredient(args \\ [], opts \\ [], exec_children) when is_function(exec_children) do
+      @doc """
+      Execute entire ingredient and returns 
+      opts that were gathered in ingredient
+      """
+      def exec_ingredient(args \\ [], opts \\ []) do
         description = get_description(args, opts)
 
         exec(description)
 
-        Keyword.merge(opts, description.opts) |> exec_children.()
-        description
+        description.opts
       end
 
       def cmds(_), do: :ok

@@ -4,10 +4,11 @@ defmodule Recipes.RecipeFake do
   use PhoenixComposer.Recipes.Recipe
   alias Ingredients.Fakes.TransparentFake
 
-  # ingredient TransparentFake, args: ["some arg", 42] do
-  # end
-  # 
-  # ingredient Ingredients.IngredientStub, args: ["some arg", 42] do
-  # end
+  recipe do
+    ingredient TransparentFake, args: ["some arg", 42], opts: [a: 1, b: 2] do
+      ingredient TransparentFake, args: ["other arg"]
+    end
+  end
+
 end
 
