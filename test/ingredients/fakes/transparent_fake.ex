@@ -1,27 +1,27 @@
 defmodule Ingredients.Fakes.TransparentFake do
   use PhoenixComposer.Ingredients.Ingredient
 
-  @impl
+  @impl true
   def get_description(args, opts) do
     args 
     |> Enum.join("-") 
     |> Mix.shell.info()
 
     opts 
-    |> Enum.map(fn {key, value} -> to_string(key) end) 
+    |> Enum.map(fn {key, _value} -> to_string(key) end) 
     |> Enum.join("-") 
     |> Mix.shell.info()
 
     %Ingredient{args: args, opts: opts}
   end
 
-  @impl
-  def cmds(description) do
+  @impl true
+  def cmds(_description) do
     :ok
   end
 
-  @impl
-  def exec(description) do
+  @impl true
+  def exec(_description) do
     :ok
   end
 end

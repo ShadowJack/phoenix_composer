@@ -8,8 +8,8 @@ defmodule PhoenixComposer.Recipes.PostgresHamlSassGuardianExmachinaRecipe do
   alias PhoenixComposer.Ingredients.Phoenix 
   #alias PhoenixComposer.Ingredients.{Haml, Brunch}
 
-  #recipe do
-    #ingredient Phoenix, opts: [database: "postgres", no_ecto: false, no_html: true] do
+  recipe do
+    ingredient Phoenix, opts: [database: "postgres", no_ecto: false, no_html: true] #do
   # 
   #       # Add phoenix_haml
   #       # TODO: move everything to ingredient, leave only options
@@ -35,8 +35,8 @@ defmodule PhoenixComposer.Recipes.PostgresHamlSassGuardianExmachinaRecipe do
   # 
   #         config
   #       end
-  #end
+  #     end
 
 
-#  end
+  end
 end
