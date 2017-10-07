@@ -27,4 +27,5 @@ defmodule Recipes.RecipeTest do
     assert_receive {:mix_shell, :info, ["separate ingredient"]}
     refute_receive {:mix_shell, :info, ["a-b"]}
   end
+
 end

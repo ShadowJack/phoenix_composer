@@ -7,8 +7,9 @@ defmodule PhoenixComposer.Recipes.Recipe do
 
   All inner ingredients receive options from their parents, so that it's possible
   to use dependencies in inner ingredients.
-  
   """
+
+  alias PhoenixComposer.Recipes.RecipeState
 
   defmacro __using__(_) do
     quote do
@@ -24,8 +25,7 @@ defmodule PhoenixComposer.Recipes.Recipe do
     quote do
 
       def exec(path) do
-        # setup state agent
-        Agent.start_link(fn -> {path, Keyword.new()} end, name: __MODULE__)
+        RecipeState.start_link(path)
 
         unquote(block)
       end
@@ -71,9 +71,7 @@ defmodule PhoenixComposer.Recipes.Recipe do
       {args, opts} = parse_options(unquote(options))
       args = inject_phoenix_args(mod, args)
   
-      opts = 
-        Agent.get(__MODULE__, fn {_, scope_opts} -> scope_opts end)
-        |> Keyword.merge(opts)
+      opts = RecipeState.get_opts() |> Keyword.merge(opts)
   
       # execute ingredient
       mod.exec_ingredient(args, opts)
@@ -86,22 +84,20 @@ defmodule PhoenixComposer.Recipes.Recipe do
 
       args = inject_phoenix_args(mod, args)
 
-      scope_opts = Agent.get(__MODULE__, fn {_, scope_opts} -> scope_opts end)
-
-      extended_scope_opts = Keyword.merge(scope_opts, opts)
+      scope_opts = RecipeState.get_opts() |> Keyword.merge(opts)
 
       # execute ingredient
-      inner_scope_opts = mod.exec_ingredient(args, extended_scope_opts)
+      ingredient_opts = mod.exec_ingredient(args, scope_opts)
 
       # put updated scope opts into current state
       # so that child ingredients could use them
-      Agent.update(__MODULE__, fn {path, _} -> {path, Keyword.merge(scope_opts, inner_scope_opts)} end)
+      RecipeState.put_opts(mod, ingredient_opts)
 
       # execute do block of the ingredient
       unquote(block)
 
       # restore current scope state
-      Agent.update(__MODULE__, fn {path, _} -> {path, scope_opts} end)
+      RecipeState.pop_opts()
     end
   end
 
@@ -121,7 +117,7 @@ defmodule PhoenixComposer.Recipes.Recipe do
 
   @spec inject_phoenix_args(atom, []) :: []
   def inject_phoenix_args(PhoenixComposer.Ingredients.PhoenixComposer, args) do
-    path = Agent.get(__MODULE__, fn {path, _} -> path end)
+    path = RecipeState.get_path()
     [path | args]
   end
   def inject_phoenix_args(_mod, args) do
