@@ -119,7 +119,7 @@ defmodule PhoenixComposer.Ingredients.Ingredient do
   """
   @spec ask_user(Option.t, [{atom, answer}]) :: [{atom, answer}]
   def ask_user(option, prev_answers) do
-    if should_ask?(prev_answers, option.deps) do
+    if should_ask?(prev_answers, option.name, option.deps) do
       do_ask_user(option, prev_answers)
     else
       prev_answers
@@ -127,14 +127,19 @@ defmodule PhoenixComposer.Ingredients.Ingredient do
   end
 
   # Should ask the new question only if all its dependencies are positive
-  @spec should_ask?([{atom, answer}], [{atom, boolean}]) :: boolean
-  defp should_ask?(prev_answers, deps) do
-    Enum.all?(prev_answers, fn {name, value} -> 
-      case Enum.find(deps, fn {dep_name, _} -> dep_name == name end) do
-        {_, dep_value} -> dep_value == value
-        nil -> true
-      end
-    end)
+  # and answer hasn't been passed from outside
+  @spec should_ask?([{atom, answer}], atom, [{atom, boolean}]) :: boolean
+  defp should_ask?(prev_answers, opt_name, deps) do
+    if (Keyword.has_key?(prev_answers, opt_name)) do
+      false
+    else
+      Enum.all?(prev_answers, fn {name, value} -> 
+        case Enum.find(deps, fn {dep_name, _} -> dep_name == name end) do
+          {_, dep_value} -> dep_value == value
+          nil -> true
+        end
+      end)
+    end
   end
 
   @spec do_ask_user(%Option{default: String.t}, [{atom, answer}]) :: [{atom, answer}]

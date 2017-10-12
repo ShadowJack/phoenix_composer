@@ -26,7 +26,7 @@ defmodule Ingredients.PhoenixTest do
   test "doesn't ask for --umbrella option for Phoenix ~> 1.2.0" do
     version = 1.2
 
-    opts = Phoenix.get_default_opts([@test_app, version]) 
+    opts = Phoenix.get_default_opts(@test_app, version) 
 
     refute Enum.any?(opts, fn %Option{name: name} -> name == :umbrella end)
   end
@@ -34,7 +34,7 @@ defmodule Ingredients.PhoenixTest do
   test "asks for --umbrella option for Phoenix ~> 1.3.0" do
     version = 1.3
 
-    opts = Phoenix.get_default_opts([@test_app, version]) 
+    opts = Phoenix.get_default_opts(@test_app, version) 
 
     assert Enum.any?(opts, fn %Option{name: name} -> name == :umbrella end)
   end
@@ -43,8 +43,7 @@ defmodule Ingredients.PhoenixTest do
     in_tmp(get_tmp_folder(), fn -> 
       answer_questions()
 
-      Phoenix.get_description([@test_app], [])
-      |> Phoenix.exec_cmds()
+      Phoenix.exec_ingredient([@test_app], [])
 
       assert_file("#{@test_app}/mix.exs", "phoenix")
     end)
@@ -54,10 +53,21 @@ defmodule Ingredients.PhoenixTest do
     in_tmp(get_tmp_folder(), fn -> 
       answer_questions(false)
 
-      Phoenix.get_description([@test_app], [])
-      |> Phoenix.exec_cmds()
+      Phoenix.exec_ingredient([@test_app], [])
 
       # No files for ecto
+      assert_file("#{@test_app}/mix.exs")
+      refute_file("#{@test_app}/lib/#{@test_app}/repo.ex")
+    end)
+  end
+
+  test "options passed from outside are respected" do
+    in_tmp(get_tmp_folder(), fn ->
+      answer_questions()
+
+      Phoenix.exec_ingredient([@test_app], [ecto: false])
+
+      #No files for ecto
       assert_file("#{@test_app}/mix.exs")
       refute_file("#{@test_app}/lib/#{@test_app}/repo.ex")
     end)

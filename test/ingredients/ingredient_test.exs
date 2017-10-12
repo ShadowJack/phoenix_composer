@@ -1,3 +1,5 @@
+Mix.shell(Mix.Shell.Process)
+
 defmodule Ingredients.IngredientTest do
   use ExUnit.Case, async: true
 
@@ -38,5 +40,15 @@ defmodule Ingredients.IngredientTest do
 
     refute_receive {:mix_shell, :prompt, [_]}
     assert updated_responses == responses
+  end
+
+  test "doesn't prompt for an option that has already been answered(passed from outside)" do
+    value = "value passed from a recipe"
+    passed_opts = [string_option: value]
+
+    responses = Ingredient.ask_user(@string_opt, passed_opts)
+
+    refute_receive {:mix_shell, :prompt, [_]}
+    assert value == Keyword.get(responses, :string_option)
   end
 end

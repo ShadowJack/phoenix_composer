@@ -31,11 +31,11 @@ defmodule PhoenixComposer.Ingredients.Phoenix do
   defp do_get_description(:not_installed, _path, _external_opts) do
     %Ingredient{errors: [@not_installed_error]}
   end
-  defp do_get_description(phx_version ,path, _external_opts) do
+  defp do_get_description(phx_version ,path, external_opts) do
     opts = 
-      get_default_opts([path, phx_version])
-      |> Enum.reduce([], &(ask_user/2))
-      |> Keyword.put(:phx_version, phx_version)
+      get_default_opts(path, phx_version)
+      |> Enum.reject(fn opt -> Keyword.has_key?(external_opts, opt.name) end)
+      |> Enum.reduce(external_opts, &(ask_user/2))
 
     # Get additional info about paths to important folders
     # of the new project
@@ -44,7 +44,7 @@ defmodule PhoenixComposer.Ingredients.Phoenix do
     else
       PhoenixComposer.Ingredients.Phoenix.Single
     end
-    opts = mod.add_bindings(phx_version, path, opts) |> IO.inspect()
+    opts = mod.add_bindings(phx_version, path, opts)
 
     %Ingredient{opts: opts, args: [path]}
   end
@@ -54,15 +54,18 @@ defmodule PhoenixComposer.Ingredients.Phoenix do
   @impl true
   @spec cmds(Ingredient.t) :: none
   def cmds(%Ingredient{opts: opts, args: [path | _]}) do
+    phx_version = Keyword.get(opts, :phx_version)
     argv = 
-      opts
+      get_default_opts(path, phx_version)
+      |> Enum.map(fn %Option{name: name} -> {name, Keyword.get(opts, name)} end)
       |> OptionParser.to_argv()
       |> Enum.join(" ")
 
     cmd = cond do
-      opts.phx_version >= 1.3 -> "mix #{@phx_new} #{path} #{argv}"
+      phx_version >= 1.3 -> "mix #{@phx_new} #{path} #{argv}"
       :otherwise              -> "mix #{@phoenix_new} #{path} #{argv}"
     end
+
 
     proc = %Process{pid: pid} = 
       Porcelain.spawn_shell(cmd, in: :receive, out: {:send, self()})
@@ -116,8 +119,8 @@ defmodule PhoenixComposer.Ingredients.Phoenix do
   @doc """
   Build options for phoenix.new or phx.new(if installed) task.
   """
-  @spec get_default_opts([]) :: [Option.t]
-  def get_default_opts([path, phx_version]) do
+  @spec get_default_opts(String.t, number) :: [Option.t]
+  def get_default_opts(path, phx_version) do
     default_app = Path.basename(path)
     default_module = Macro.camelize(default_app)
     opts = [

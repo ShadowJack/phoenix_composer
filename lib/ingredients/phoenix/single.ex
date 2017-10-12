@@ -1,12 +1,24 @@
 defmodule PhoenixComposer.Ingredients.Phoenix.Single do
+  @bindings [
+    :app_path, 
+    :project_path, 
+    :root_app, 
+    :root_mod,
+    :web_app,
+    :lib_web_name,
+    :web_namespace,
+    :web_path 
+  ]
   
   @doc """
   Add paths of important subfolders of a project
   and other bindings to options list.
   """
   def add_bindings(phx_verion, base_path, opts) do
+    bindings = Map.new(@bindings, fn key -> {key, nil} end)
     opts
     |> Enum.into(%{base_path: base_path, phx_verion: phx_verion})
+    |> Map.merge(bindings)
     |> put_app()
     |> put_root_app()
     |> put_web_app()
