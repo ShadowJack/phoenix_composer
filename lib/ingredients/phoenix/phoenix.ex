@@ -34,7 +34,6 @@ defmodule PhoenixComposer.Ingredients.Phoenix do
   defp do_get_description(phx_version ,path, external_opts) do
     opts = 
       get_default_opts(path, phx_version)
-      |> Enum.reject(fn opt -> Keyword.has_key?(external_opts, opt.name) end)
       |> Enum.reduce(external_opts, &(ask_user/2))
 
     # Get additional info about paths to important folders

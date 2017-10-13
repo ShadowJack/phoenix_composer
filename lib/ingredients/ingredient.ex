@@ -155,5 +155,4 @@ defmodule PhoenixComposer.Ingredients.Ingredient do
     value = Mix.shell.yes?(option.description)
     [{option.name, value} | answers]
   end
-
 end
