@@ -83,9 +83,5 @@ defmodule Ingredients.PhoenixTest do
     send self(), {:mix_shell_input, :yes?, true}
     send self(), {:mix_shell_input, :yes?, true}
   end
-
-  defp get_tmp_folder() do
-    "test_folder_#{:rand.uniform(1000)}"
-  end
 end
 

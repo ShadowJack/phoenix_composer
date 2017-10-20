@@ -14,14 +14,4 @@ defmodule Ingredients.Fakes.TransparentFake do
 
     %Ingredient{args: args, opts: opts}
   end
-
-  @impl true
-  def cmds(_description) do
-    :ok
-  end
-
-  @impl true
-  def exec(_description) do
-    :ok
-  end
 end

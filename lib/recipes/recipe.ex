@@ -101,8 +101,6 @@ defmodule PhoenixComposer.Recipes.Recipe do
     end
   end
 
-
-
   ## Helpers
   #
 

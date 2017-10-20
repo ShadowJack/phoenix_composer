@@ -51,4 +51,5 @@ defmodule Ingredients.IngredientTest do
     refute_receive {:mix_shell, :prompt, [_]}
     assert value == Keyword.get(responses, :string_option)
   end
+
 end

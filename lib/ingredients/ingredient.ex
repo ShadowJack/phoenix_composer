@@ -56,24 +56,6 @@ defmodule PhoenixComposer.Ingredients.Ingredient do
   """
   @callback todo() :: none
 
-  @doc ~S"""
-  Funciton that calls all required callbacks in the right order
-  
-  ## Example
-
-    iex> defmodule SomeIngredient do
-    ...>   use PhoenixComposer.Ingredients.Ingredient
-    ...>
-    ...>   def exec(%Ingredient{opts: opts}) do 
-    ...>     deps Keyword.get(opts, :deps_version, "~> 0.2")
-    ...>     config
-    ...>     cmds
-    ...>     todo
-    ...>   end
-    ...> end
-
-  """
-  @callback exec(description :: __MODULE__.t) :: none
 
   defmacro __using__(_) do
     quote do
@@ -91,7 +73,14 @@ defmodule PhoenixComposer.Ingredients.Ingredient do
       def exec_ingredient(args \\ [], opts \\ []) do
         description = get_description(args, opts)
 
-        exec(description)
+        # Execute all steps of ingredient
+        cmds(description)
+        # Each ingredient decides what to do with opts, 
+        # but by default convention :deps_version option should be supported
+        deps(description.opts)
+        config()
+        add_files(description.opts)
+        todo()
 
         description.opts
       end
@@ -109,6 +98,11 @@ defmodule PhoenixComposer.Ingredients.Ingredient do
       defoverridable [cmds: 1, deps: 1, config: 0, add_files: 1, todo: 0]
     end
   end
+
+
+
+  ## Helpers
+  #
 
   @doc """
   Asks user a new question in console depending on 
@@ -141,7 +135,6 @@ defmodule PhoenixComposer.Ingredients.Ingredient do
       end)
     end
   end
-
   @spec do_ask_user(%Option{default: String.t}, [{atom, answer}]) :: [{atom, answer}]
   defp do_ask_user(%Option{default: default} = option, answers) when is_binary(default) do
     response = Mix.shell.prompt(option.description) |> String.trim()
@@ -154,5 +147,19 @@ defmodule PhoenixComposer.Ingredients.Ingredient do
   defp do_ask_user(%Option{default: default} = option, answers) when is_boolean(default) do
     value = Mix.shell.yes?(option.description)
     [{option.name, value} | answers]
+  end
+
+  @doc """
+  Adds a new line to dependencies with
+  passed dependency description
+  """
+  @spec add_deps({atom, String.t}, []) :: none
+  def add_deps(dep, opts) do
+    mix_path = Keyword.get(opts, :base_path) |> Path.join("mix.exs")
+
+    {:ok, content} = File.read(mix_path)
+    content = String.replace(content, ~r/deps do(.*)\]/s, "deps do\\g{1},\n#{inspect(dep)}]")
+    File.rm(mix_path)
+    File.write(mix_path, content)
   end
 end

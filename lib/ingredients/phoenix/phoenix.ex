@@ -78,15 +78,6 @@ defmodule PhoenixComposer.Ingredients.Phoenix do
   end
 
 
-  @doc false
-  @impl true
-  @spec exec(Ingredient.t) :: none
-  def exec(ingredient) do
-    cmds(ingredient)
-  end
-
-
-
   ## Helper functions
   #
 
